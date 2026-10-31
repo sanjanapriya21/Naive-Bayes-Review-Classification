@@ -27,7 +27,7 @@ def prepare_model():
     data = data.dropna(subset=["Review", "Liked"]).copy()
     data["Review"] = data["Review"].astype(str)
 
-    stop_words = set(stopwords.words("english"))
+    stop_words = set(stopwords.words("english")
     stop_words.difference_update({"no", "nor", "not", "never"}))
     lemmatizer = WordNetLemmatizer()
 
