@@ -26,11 +26,11 @@ def prepare_model():
 
     data = data.dropna(subset=["Review", "Liked"]).copy()
     data["Review"] = data["Review"].astype(str)
-
-    stop_words = set(stopwords.words("english")
-    stop_words.difference_update({"no", "nor", "not", "never"}))
+    
+    stop_words = set(stopwords.words("english"))
+    stop_words.difference_update({"no", "nor", "not", "never"})
     lemmatizer = WordNetLemmatizer()
-
+    
     def clean_review(review):
         review = review.lower()
         review = re.sub(r"[^a-zA-Z\s]", " ", review)
