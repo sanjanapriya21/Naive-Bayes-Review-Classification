@@ -1,3 +1,79 @@
+import re
+import streamlit as st
+import pandas as pd
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.naive_bayes import BernoulliNB
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    confusion_matrix,
+    classification_report,
+)
+
+st.set_page_config(
+    page_title="Restaurant Review Sentiment Analysis",
+    page_icon="🍽️",
+    layout="centered"
+)
+
+st.title("🍽️ Restaurant Review Sentiment Analysis")
+st.write(
+    "Compare Bag of Words and TF-IDF using Bernoulli Naïve Bayes, "
+    "automatically select the better representation, and predict new reviews."
+)
+
+
+@st.cache_resource
+def train_and_compare_models():
+    nltk.download("stopwords", quiet=True)
+    nltk.download("wordnet", quiet=True)
+    nltk.download("omw-1.4", quiet=True)
+
+    data = pd.read_csv("output.csv")
+    data.columns = data.columns.str.strip()
+
+    required_columns = {"Review", "Liked"}
+    if not required_columns.issubset(data.columns):
+        raise ValueError("output.csv must contain 'Review' and 'Liked' columns.")
+
+    data = data.dropna(subset=["Review", "Liked"]).copy()
+    data["Review"] = data["Review"].astype(str)
+
+    stop_words = set(stopwords.words("english"))
+    # Keep negation words because they change the meaning of a review.
+    stop_words.difference_update({"no", "nor", "not", "never"})
+    lemmatizer = WordNetLemmatizer()
+
+    def clean_review(review):
+        review = review.lower()
+        review = re.sub(r"[^a-zA-Z\s]", " ", review)
+        review = re.sub(r"\d+", " ", review)
+        review = re.sub(r"\s+", " ", review).strip()
+        words = [
+            lemmatizer.lemmatize(word)
+            for word in review.split()
+            if word not in stop_words
+        ]
+        return " ".join(words)
+
+    data["clean_review"] = data["Review"].apply(clean_review)
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        data["clean_review"],
+        data["Liked"].astype(int),
+        test_size=0.20,
+        random_state=42,
+        stratify=data["Liked"].astype(int),
+    )
+
+    results = {}
+
 
     # TF-IDF + Bernoulli Naive Bayes
     tfidf_vectorizer = TfidfVectorizer()
